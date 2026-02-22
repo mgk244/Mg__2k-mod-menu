@@ -1,0 +1,300 @@
+-- Mg__2k ESP | MOD MENU FF STYLE - FULL FIX
+-- ESP + Nome + Distância + Aimlock + Aimbot + FOV FIXO + Slider + Minimizar
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+local espOn = true
+local aimlockOn = false
+local aimbotOn = false
+local minimized = false
+local showFov = true
+
+local espColor = Color3.fromRGB(255,0,0)
+local FOV = 150
+
+-- GUI
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "Mg__2k_ESP"
+
+-- Painel
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,300,0,390)
+frame.Position = UDim2.new(0.03,0,0.2,0)
+frame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+frame.Active = true
+frame.Draggable = false
+Instance.new("UICorner",frame).CornerRadius = UDim.new(0,12)
+
+-- Título
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,45)
+title.BackgroundColor3 = Color3.fromRGB(20,20,20)
+title.Text = "💀 Mg__2k ESP | MOD MENU 💀"
+title.TextColor3 = Color3.fromRGB(0,170,255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 15
+Instance.new("UICorner",title)
+
+-- Arrastar só pelo topo
+local dragging = false
+local dragStart, startPos
+
+title.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+    end
+end)
+
+title.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- Minimizar
+local minBtn = Instance.new("TextButton",frame)
+minBtn.Size = UDim2.new(0,35,0,28)
+minBtn.Position = UDim2.new(1,-40,0,8)
+minBtn.Text = "-"
+minBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+minBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner",minBtn)
+
+-- Criar botões
+local function createBtn(text,y)
+    local b = Instance.new("TextButton",frame)
+    b.Size = UDim2.new(0.9,0,0,36)
+    b.Position = UDim2.new(0.05,0,0,y)
+    b.Text = text
+    b.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 14
+    Instance.new("UICorner",b)
+    return b
+end
+
+local espBtn   = createBtn("ESP: ON",60)
+local aimBtn   = createBtn("AIMLOCK: OFF",105)
+local botBtn   = createBtn("AIMBOT: OFF",150)
+local fovBtn   = createBtn("FOV VISÍVEL: ON",195)
+local colorBtn = createBtn("TROCAR COR",240)
+local offBtn   = createBtn("DESLIGAR TUDO",330)
+
+-- Slider FOV
+local fovFrame = Instance.new("Frame",frame)
+fovFrame.Size = UDim2.new(0.9,0,0,55)
+fovFrame.Position = UDim2.new(0.05,0,0,280)
+fovFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Instance.new("UICorner",fovFrame)
+
+local fovText = Instance.new("TextLabel",fovFrame)
+fovText.Size = UDim2.new(1,0,0.4,0)
+fovText.BackgroundTransparency = 1
+fovText.Text = "FOV: 150"
+fovText.TextColor3 = Color3.new(1,1,1)
+fovText.Font = Enum.Font.GothamBold
+fovText.TextSize = 13
+
+local sliderBar = Instance.new("Frame",fovFrame)
+sliderBar.Size = UDim2.new(0.95,0,0,6)
+sliderBar.Position = UDim2.new(0.025,0,0.65,0)
+sliderBar.BackgroundColor3 = Color3.fromRGB(45,45,45)
+Instance.new("UICorner",sliderBar)
+
+local sliderBtn = Instance.new("Frame",sliderBar)
+sliderBtn.Size = UDim2.new(0,14,0,14)
+sliderBtn.Position = UDim2.new(0.3,-7,-0.7,0)
+sliderBtn.BackgroundColor3 = Color3.fromRGB(0,170,255)
+Instance.new("UICorner",sliderBtn)
+
+-- FOV Circle
+local circle = Drawing.new("Circle")
+circle.Color = Color3.fromRGB(0,170,255)
+circle.Thickness = 2
+circle.NumSides = 100
+circle.Filled = false
+circle.Radius = FOV
+circle.Visible = true
+
+-- ESP
+local function clearESP()
+    for _,plr in pairs(Players:GetPlayers()) do
+        if plr.Character then
+            for _,v in pairs(plr.Character:GetDescendants()) do
+                if v.Name == "MgESP" or v.Name == "MgINFO" then
+                    v:Destroy()
+                end
+            end
+        end
+    end
+end
+
+local function createESP(plr)
+    if plr == LocalPlayer then return end
+    local function apply(char)
+        if char:FindFirstChild("MgESP") then return end
+
+        local hl = Instance.new("Highlight",char)
+        hl.Name = "MgESP"
+        hl.FillColor = espColor
+        hl.OutlineColor = espColor
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+
+        local bill = Instance.new("BillboardGui",char:WaitForChild("Head"))
+        bill.Name = "MgINFO"
+        bill.Size = UDim2.new(0,200,0,45)
+        bill.StudsOffset = Vector3.new(0,2,0)
+        bill.AlwaysOnTop = true
+
+        local txt = Instance.new("TextLabel",bill)
+        txt.Size = UDim2.new(1,0,1,0)
+        txt.BackgroundTransparency = 1
+        txt.TextColor3 = Color3.new(1,1,1)
+        txt.TextStrokeTransparency = 0
+        txt.Font = Enum.Font.GothamBold
+        txt.TextSize = 14
+
+        local conn
+        conn = RunService.RenderStepped:Connect(function()
+            if not espOn then conn:Disconnect() return end
+            if char:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local dist = (char.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                txt.Text = plr.Name.." | "..math.floor(dist).."m"
+            end
+        end)
+    end
+
+    if plr.Character then apply(plr.Character) end
+    plr.CharacterAdded:Connect(apply)
+end
+
+-- Alvo dentro do FOV
+local function getClosestPlayer()
+    local closest,dist = nil,math.huge
+    local center = Camera.ViewportSize / 2
+
+    for _,plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Head") then
+            local pos,vis = Camera:WorldToViewportPoint(plr.Character.Head.Position)
+            if vis then
+                local mag = (Vector2.new(pos.X,pos.Y) - center).Magnitude
+                if mag < FOV and mag < dist then
+                    dist = mag
+                    closest = plr
+                end
+            end
+        end
+    end
+    return closest
+end
+
+-- Loop principal
+RunService.RenderStepped:Connect(function()
+    circle.Position = Camera.ViewportSize / 2
+    circle.Radius = FOV
+    circle.Visible = showFov
+
+    if espOn then
+        for _,plr in pairs(Players:GetPlayers()) do
+            createESP(plr)
+        end
+    end
+
+    if aimlockOn or aimbotOn then
+        local target = getClosestPlayer()
+        if target and target.Character and target.Character:FindFirstChild("Head") then
+            Camera.CFrame = Camera.CFrame:Lerp(
+                CFrame.new(Camera.CFrame.Position,target.Character.Head.Position),
+                aimbotOn and 0.15 or 1
+            )
+        end
+    end
+end)
+
+-- Botões
+espBtn.MouseButton1Click:Connect(function()
+    espOn = not espOn
+    espBtn.Text = "ESP: "..(espOn and "ON" or "OFF")
+    if not espOn then clearESP() end
+end)
+
+aimBtn.MouseButton1Click:Connect(function()
+    aimlockOn = not aimlockOn
+    aimBtn.Text = "AIMLOCK: "..(aimlockOn and "ON" or "OFF")
+end)
+
+botBtn.MouseButton1Click:Connect(function()
+    aimbotOn = not aimbotOn
+    botBtn.Text = "AIMBOT: "..(aimbotOn and "ON" or "OFF")
+end)
+
+fovBtn.MouseButton1Click:Connect(function()
+    showFov = not showFov
+    fovBtn.Text = "FOV VISÍVEL: "..(showFov and "ON" or "OFF")
+end)
+
+colorBtn.MouseButton1Click:Connect(function()
+    espColor = Color3.fromRGB(math.random(0,255),math.random(0,255),math.random(0,255))
+    clearESP()
+end)
+
+offBtn.MouseButton1Click:Connect(function()
+    espOn=false
+    aimlockOn=false
+    aimbotOn=false
+    showFov=false
+    clearESP()
+    espBtn.Text="ESP: OFF"
+    aimBtn.Text="AIMLOCK: OFF"
+    botBtn.Text="AIMBOT: OFF"
+    fovBtn.Text="FOV VISÍVEL: OFF"
+end)
+
+-- Slider FOV
+local draggingSlider = false
+sliderBtn.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        draggingSlider = true
+    end
+end)
+
+UIS.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        draggingSlider = false
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if draggingSlider then
+        local pos = math.clamp((UIS:GetMouseLocation().X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X,0,1)
+        sliderBtn.Position = UDim2.new(pos,-7,-0.7,0)
+        FOV = math.floor(50 + (pos * 350))
+        fovText.Text = "FOV: "..FOV
+    end
+end)
+
+-- Minimizar real
+local elements = {espBtn,aimBtn,botBtn,fovBtn,colorBtn,offBtn,fovFrame}
+minBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    for _,v in pairs(elements) do v.Visible = not minimized end
+    frame:TweenSize(minimized and UDim2.new(0,300,0,50) or UDim2.new(0,300,0,390),"Out","Quad",0.25,true)
+    minBtn.Text = minimized and "+" or "-"
+end)
